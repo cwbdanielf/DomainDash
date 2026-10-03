@@ -13,6 +13,8 @@ $script:Scanner = Join-Path $script:Root 'cacador-dominios.ps1'
 $script:OutputPath = Join-Path $script:Root 'dominios-disponiveis.txt'
 $script:LogPath = Join-Path $script:Root 'cacador-dominios-log.txt'
 $script:DictionaryPath = Join-Path $script:Root 'dicionarios'
+$script:MaxRequestBodyBytes = 7MB
+$script:MaxDictionaryBytes = 5MB
 $script:Loopback = [System.Net.IPAddress]::Parse('127.0.0.1')
 $script:SessionToken = [Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLowerInvariant()
 $script:ScanProcess = $null
@@ -31,7 +33,7 @@ function Send-HttpResponse {
         [switch]$NoStore
     )
     $reason = switch ($Status) {
-        200 { 'OK' } 202 { 'Accepted' } 400 { 'Bad Request' } 403 { 'Forbidden' }
+        200 { 'OK' } 201 { 'Created' } 202 { 'Accepted' } 400 { 'Bad Request' } 403 { 'Forbidden' }
         404 { 'Not Found' } 405 { 'Method Not Allowed' } 409 { 'Conflict' }
         413 { 'Payload Too Large' } 415 { 'Unsupported Media Type' } 500 { 'Internal Server Error' }
         default { 'Service Unavailable' }
@@ -83,7 +85,10 @@ function Read-HttpRequest {
     }
     $length = 0
     if ($headers.ContainsKey('content-length') -and -not [int]::TryParse($headers['content-length'], [ref]$length)) { throw 'Tamanho do corpo inválido.' }
-    if ($length -gt 16384) { throw 'Corpo HTTP excede o limite.' }
+    if ($length -lt 0) { throw 'Tamanho do corpo inválido.' }
+    $requestPath = ($requestParts[1] -split '\?', 2)[0]
+    $maxBodyLength = if ($requestPath -ceq '/api/dictionaries') { $script:MaxRequestBodyBytes } else { 16384 }
+    if ($length -gt $maxBodyLength) { throw [System.IO.InvalidDataException]::new('Corpo HTTP excede o limite.') }
     if ($headers.ContainsKey('transfer-encoding')) { throw 'Transfer-Encoding não permitido.' }
     $bodyBytes = [byte[]]::new($length)
     $read = 0
@@ -166,6 +171,53 @@ function Get-Dictionaries {
         $items = @(Get-ChildItem -LiteralPath $script:DictionaryPath -Filter '*.txt' -File | Sort-Object Name | ForEach-Object { $_.Name })
     }
     return @{ dictionaries = $items }
+}
+
+function Save-DictionaryUpload {
+    param([string]$JsonBody)
+    try { $payload = ConvertFrom-Json -InputObject $JsonBody -AsHashtable -ErrorAction Stop }
+    catch { return @{ Status = 400; Data = @{ error = 'Os dados do arquivo não são um JSON válido.' } } }
+    if ($payload -isnot [System.Collections.IDictionary] -or @($payload.Keys | Where-Object { $_ -notin @('Name', 'ContentBase64') }).Count -gt 0) {
+        return @{ Status = 400; Data = @{ error = 'Os dados do arquivo estão inválidos.' } }
+    }
+    $name = [string]$payload.Name
+    $encoded = [string]$payload.ContentBase64
+    if ($name.Length -lt 5 -or $name.Length -gt 128 -or $name -notmatch '^[\p{L}\p{N}][\p{L}\p{N} _().-]{0,123}\.txt$') {
+        return @{ Status = 400; Data = @{ error = 'Use um nome simples de arquivo terminado em .txt.' } }
+    }
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($name)
+    if ($baseName.EndsWith(' ') -or $baseName.EndsWith('.') -or $baseName -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$') {
+        return @{ Status = 400; Data = @{ error = 'Esse nome de arquivo é reservado pelo Windows.' } }
+    }
+    if (-not $encoded -or $encoded.Length -gt [int][math]::Ceiling($script:MaxDictionaryBytes / 3.0 * 4.0) + 4) {
+        return @{ Status = 413; Data = @{ error = 'O dicionário está vazio ou excede o limite de 5 MiB.' } }
+    }
+    try { $bytes = [Convert]::FromBase64String($encoded) }
+    catch { return @{ Status = 400; Data = @{ error = 'O conteúdo do dicionário está inválido.' } } }
+    if ($bytes.Length -eq 0 -or $bytes.Length -gt $script:MaxDictionaryBytes) {
+        return @{ Status = 413; Data = @{ error = 'O dicionário deve ter conteúdo e não pode exceder 5 MiB.' } }
+    }
+    try { $null = [System.Text.UTF8Encoding]::new($false, $true).GetString($bytes) }
+    catch { return @{ Status = 400; Data = @{ error = 'O arquivo deve estar codificado em UTF-8.' } } }
+
+    $temporary = $null
+    try {
+        [void](New-Item -ItemType Directory -Path $script:DictionaryPath -Force)
+        $destination = Join-Path $script:DictionaryPath $name
+        $temporary = Join-Path $script:DictionaryPath ('.upload-' + [guid]::NewGuid().ToString('N') + '.tmp')
+        [System.IO.File]::WriteAllBytes($temporary, $bytes)
+        [System.IO.File]::Move($temporary, $destination, $false)
+        return @{ Status = 201; Data = @{ name = $name; message = 'Dicionário adicionado.' } }
+    } catch [System.IO.IOException] {
+        if (Test-Path -LiteralPath (Join-Path $script:DictionaryPath $name) -PathType Leaf) {
+            return @{ Status = 409; Data = @{ error = 'Já existe um dicionário com esse nome. Escolha outro nome.' } }
+        }
+        return @{ Status = 500; Data = @{ error = 'Não foi possível salvar o dicionário na pasta do aplicativo.' } }
+    } catch {
+        return @{ Status = 500; Data = @{ error = 'Não foi possível salvar o dicionário na pasta do aplicativo.' } }
+    } finally {
+        if ($temporary -and (Test-Path -LiteralPath $temporary -PathType Leaf)) { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
+    }
 }
 
 function Start-RealScan {
@@ -346,14 +398,19 @@ function Process-Client {
             return
         }
         $path = ($request.Target -split '\?', 2)[0]
-        if ($path -eq '/api/scan') {
+        if ($path -eq '/api/scan' -or ($path -eq '/api/dictionaries' -and $request.Method -eq 'POST')) {
             if ($request.Method -ne 'POST') { Send-Json $stream 405 @{ error = 'Método não permitido.' }; return }
             $expectedOrigin = "http://127.0.0.1:$script:BoundPort"
             if (-not $request.Headers.ContainsKey('origin') -or $request.Headers['origin'] -cne $expectedOrigin -or -not $request.Headers.ContainsKey('x-app-token') -or $request.Headers['x-app-token'] -cne $script:SessionToken) {
                 Send-Json $stream 403 @{ error = 'A confirmação de origem local não foi validada.' }
                 return
             }
-            if (-not $request.Headers.ContainsKey('content-type') -or $request.Headers['content-type'] -notlike 'application/json*') { Send-Json $stream 415 @{ error = 'O formato da configuração deve ser JSON.' }; return }
+            if (-not $request.Headers.ContainsKey('content-type') -or $request.Headers['content-type'] -notlike 'application/json*') { Send-Json $stream 415 @{ error = 'O formato enviado deve ser JSON.' }; return }
+            if ($path -ceq '/api/dictionaries') {
+                $result = Save-DictionaryUpload $request.Body
+                Send-Json $stream $result.Status $result.Data
+                return
+            }
             $result = Start-RealScan $request.Body
             Send-Json $stream $result.Status $result.Data
             return
@@ -372,6 +429,8 @@ function Process-Client {
         $asset = Get-AssetResponse $path
         if ($null -eq $asset) { Send-Json $stream 404 @{ error = 'Arquivo local não encontrado.' }; return }
         Send-HttpResponse -Stream $stream -Status 200 -ContentType $asset.Type -Body $asset.Bytes -NoStore
+    } catch [System.IO.InvalidDataException] {
+        try { Send-Json $stream 413 @{ error = 'O arquivo enviado excede o limite permitido.' } } catch { }
     } catch {
         try { Send-Json $stream 400 @{ error = 'A solicitação local não pôde ser interpretada.' } } catch { }
     } finally {

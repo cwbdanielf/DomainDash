@@ -35,6 +35,10 @@
     results: () => request("/api/results"),
     log: () => request("/api/log"),
     dictionaries: () => request("/api/dictionaries"),
+    uploadDictionary: (name, contentBase64) => request("/api/dictionaries", {
+      method: "POST",
+      body: JSON.stringify({ Name: name, ContentBase64: contentBase64 }),
+    }),
     startScan: (configuration) => request("/api/scan", {
       method: "POST",
       body: JSON.stringify(configuration),

@@ -37,6 +37,15 @@ body { overflow: hidden; background: #f1f0f8; }
 .limit-row { grid-template-columns: 1fr 1.22fr; align-items: center; }
 .limit-hint { margin: 0 0 3px; }
 #open-confirmation { min-height: 54px; margin-top: 4px; }
+.dictionary-drop { display: grid; justify-items: center; gap: 5px; margin-top: 12px; padding: 16px 12px; border: 1px dashed rgba(0,90,190,.42); border-radius: 18px; color: #34343b; background: rgba(255,255,255,.58); text-align: center; transition: border-color var(--duration-interaction), background-color var(--duration-interaction), box-shadow var(--duration-interaction); }
+.dictionary-drop > svg { width: 23px; height: 23px; color: var(--accent-action); }
+.dictionary-drop p { margin: 0; font-size: 13px; font-weight: 630; }
+.dictionary-drop > span { color: var(--ink-secondary); font-size: 11px; }
+.dictionary-drop.is-dragover { border-color: var(--accent-action); background: rgba(0,122,255,.09); box-shadow: 0 0 0 3px rgba(0,90,190,.12); }
+.dictionary-drop.is-uploading { opacity: .68; }
+.dictionary-pick { min-height: 42px; margin-top: 3px; padding: 0 16px; font-size: 13px; }
+.dictionary-upload-status { min-height: 0; overflow-wrap: anywhere; }
+.dictionary-upload-status:empty { display: none; }
 .source-note { display: flex; align-items: flex-start; gap: 8px; margin: 17px 4px 0; }
 .source-note svg { flex: 0 0 16px; width: 16px; height: 16px; margin-top: 1px; color: #5b687d; }
 .source-note p { margin: 0; color: #50515a; font-size: 11px; line-height: 16px; }

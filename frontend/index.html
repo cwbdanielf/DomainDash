@@ -75,7 +75,15 @@
               <div class="conditional-fields" data-mode="Dicionario" hidden>
                 <label class="field-label" for="dictionary-select">Arquivo de palavras</label>
                 <select class="field" id="dictionary-select" name="Dicionario"><option value="">Carregando arquivos disponíveis…</option></select>
-                <p class="field-hint" id="dictionary-hint">A lista mostra somente arquivos existentes na pasta de dicionários.</p>
+                <p class="field-hint" id="dictionary-hint">Escolha um arquivo disponível ou adicione seu próprio dicionário .txt.</p>
+                <div class="dictionary-drop" id="dictionary-drop">
+                  <svg aria-hidden="true"><use href="/assets/icons/icones.svg#upload"></use></svg>
+                  <p>Arraste um arquivo .txt para cá</p>
+                  <span>ou</span>
+                  <input id="dictionary-file" type="file" accept=".txt,text/plain" hidden>
+                  <button class="button button-secondary dictionary-pick" id="dictionary-pick" type="button">Escolher arquivo .txt</button>
+                </div>
+                <p class="field-hint dictionary-upload-status" id="dictionary-upload-status" role="status" aria-live="polite"></p>
               </div>
             </fieldset>
             <fieldset class="form-group">

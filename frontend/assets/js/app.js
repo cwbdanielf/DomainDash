@@ -57,7 +57,7 @@
     }
   }
 
-  async function loadDictionaries() {
+  async function loadDictionaries(selectedName = "") {
     const select = document.getElementById("dictionary-select");
     const hint = document.getElementById("dictionary-hint");
     try {
@@ -73,11 +73,80 @@
         return;
       }
       for (const dictionary of dictionaries) select.add(new Option(dictionary, dictionary));
+      if (selectedName && dictionaries.includes(selectedName)) select.value = selectedName;
+      else if (dictionaries.length > 0 && !select.value) select.selectedIndex = 0;
       hint.textContent = `${dictionaries.length.toLocaleString("pt-BR")} ${dictionaries.length === 1 ? "arquivo disponível" : "arquivos disponíveis"} na pasta de dicionários.`;
     } catch (error) {
       select.replaceChildren(new Option("Lista indisponível", ""));
       hint.textContent = error.message || "Não foi possível consultar os dicionários.";
     }
+  }
+
+  function setupDictionaryUpload() {
+    const input = document.getElementById("dictionary-file");
+    const picker = document.getElementById("dictionary-pick");
+    const drop = document.getElementById("dictionary-drop");
+    const status = document.getElementById("dictionary-upload-status");
+    let uploading = false;
+
+    const upload = async (file) => {
+      if (uploading) return;
+      if (!file || !/\.txt$/i.test(file.name)) {
+        status.textContent = "Escolha um arquivo com extensão .txt.";
+        return;
+      }
+      if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+        status.textContent = "O arquivo deve ter conteúdo e não pode exceder 5 MiB.";
+        return;
+      }
+      uploading = true;
+      picker.disabled = true;
+      drop.classList.add("is-uploading");
+      status.textContent = "Lendo arquivo…";
+      try {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+        }
+        const contentBase64 = btoa(binary);
+        await window.DomainApi.uploadDictionary(file.name, contentBase64);
+        await loadDictionaries(file.name);
+        status.textContent = `“${file.name}” foi adicionado e selecionado.`;
+      } catch (error) {
+        status.textContent = error.message || "Não foi possível adicionar o dicionário.";
+      } finally {
+        uploading = false;
+        picker.disabled = false;
+        drop.classList.remove("is-uploading");
+        input.value = "";
+      }
+    };
+
+    picker.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => upload(input.files[0]));
+    for (const eventName of ["dragenter", "dragover"]) {
+      drop.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        if (!uploading) drop.classList.add("is-dragover");
+      });
+    }
+    for (const eventName of ["dragleave", "dragend"]) {
+      drop.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        drop.classList.remove("is-dragover");
+      });
+    }
+    drop.addEventListener("drop", (event) => {
+      event.preventDefault();
+      drop.classList.remove("is-dragover");
+      if (event.dataTransfer?.files.length !== 1) {
+        status.textContent = "Solte somente um arquivo .txt por vez.";
+        return;
+      }
+      upload(event.dataTransfer.files[0]);
+    });
   }
 
   function startPolling() {
@@ -94,5 +163,6 @@
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshStatus(); });
   document.querySelectorAll("[data-refresh]").forEach((button) => button.addEventListener("click", refreshStatus));
   loadDictionaries();
+  setupDictionaryUpload();
   startPolling();
 })();
