@@ -1,0 +1,126 @@
+<!doctype html>
+<!-- Arquivo: frontend/index.html -->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2f2f7">
+  <meta name="app-token" content="__APP_TOKEN__">
+  <meta name="description" content="Painel local do DomainDash">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='13' fill='%23007aff'/%3E%3Ccircle cx='17' cy='17' r='9' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='m24 24 8 8' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <title>DomainDash</title>
+  <link rel="preload" href="/assets/fonts/inter_variavel.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/glass.css">
+  <link rel="stylesheet" href="/assets/css/componentes.css">
+  <link rel="stylesheet" href="/assets/css/telas.css">
+  <script defer src="/assets/js/api.js"></script>
+  <script defer src="/assets/js/ui.js"></script>
+  <script defer src="/assets/js/tela_busca.js"></script>
+  <script defer src="/assets/js/tela_resultados.js"></script>
+  <script defer src="/assets/js/tela_log.js"></script>
+  <script defer src="/assets/js/app.js"></script>
+</head>
+<body>
+  <main class="stage" id="app">
+    <section class="device" aria-label="DomainDash">
+      <div class="device-wallpaper" aria-hidden="true"></div>
+      <header class="status-bar" aria-label="Barra de status">
+        <time id="status-clock">--:--</time>
+        <div class="status-icons" aria-hidden="true">
+          <svg><use href="/assets/icons/icones.svg#sinal"></use></svg>
+          <svg><use href="/assets/icons/icones.svg#wifi"></use></svg>
+          <svg><use href="/assets/icons/icones.svg#bateria"></use></svg>
+        </div>
+      </header>
+      <div class="dynamic-island" aria-hidden="true"></div>
+      <div class="device-content" id="scroll-region" tabindex="-1">
+        <div class="brand-status-row">
+          <p class="eyebrow">DOMAINDASH</p>
+          <span class="state-pill" id="scan-state" role="status" aria-live="polite" aria-atomic="true"><span class="state-dot" aria-hidden="true"></span><span>Verificando</span></span>
+        </div>
+        <header class="large-header" id="large-header">
+          <h1 id="screen-title">Sua próxima ideia começa aqui.</h1>
+          <p class="header-subtitle" id="screen-subtitle">Configure uma busca e acompanhe os nomes encontrados pelo scanner.</p>
+        </header>
+        <div id="global-state" class="global-state" role="status" aria-live="polite" hidden></div>
+        <section class="screen is-active" id="screen-busca" data-screen="busca" aria-labelledby="title-busca">
+          <div class="screen-heading">
+            <div><span class="eyebrow">NOVA VARREDURA</span><h2 id="title-busca" tabindex="-1">Busca</h2></div>
+          </div>
+          <div class="notice-card">
+            <span class="notice-icon"><svg aria-hidden="true"><use href="/assets/icons/icones.svg#info"></use></svg></span>
+            <p>Uma busca real substitui a lista e o log atuais. Você verá uma confirmação antes de começar.</p>
+          </div>
+          <form id="scan-form" novalidate>
+            <fieldset class="form-group">
+              <legend>Como procurar</legend>
+              <label class="field-label" for="scan-mode">Tipo de busca</label>
+              <select class="field" id="scan-mode" name="Busca">
+                <option value="Combinacoes">Combinações</option>
+                <option value="Padrao">Padrão</option>
+                <option value="Dicionario">Dicionário</option>
+              </select>
+              <div class="conditional-fields" data-mode="Combinacoes">
+                <div class="field-row">
+                  <label class="field-wrap"><span class="field-label">Tamanho</span><input class="field" name="Caracteres" type="number" min="1" max="12" value="5" inputmode="numeric"></label>
+                  <label class="field-wrap"><span class="field-label">Alfabeto</span><select class="field" name="Alfabeto"><option value="Consoantes">Consoantes</option><option value="Letras">Letras</option><option value="LetrasNumeros">Letras e números</option><option value="Vogais">Vogais</option><option value="Numeros">Números</option></select></label>
+                </div>
+              </div>
+              <div class="conditional-fields" data-mode="Padrao" hidden>
+                <label class="field-label" for="pattern-input">Padrão</label>
+                <input class="field" id="pattern-input" name="Padrao" type="text" maxlength="63" autocomplete="off" placeholder="Ex.: 0XXX0">
+                <p class="field-hint">0 número, X letra, C consoante, V vogal, A letra ou número.</p>
+              </div>
+              <div class="conditional-fields" data-mode="Dicionario" hidden>
+                <label class="field-label" for="dictionary-select">Arquivo de palavras</label>
+                <select class="field" id="dictionary-select" name="Dicionario"><option value="">Carregando arquivos disponíveis…</option></select>
+                <p class="field-hint" id="dictionary-hint">A lista mostra somente arquivos existentes na pasta de dicionários.</p>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend>Regras da busca</legend>
+              <label class="field-label" for="tld-input">Extensão do domínio</label>
+              <input class="field" id="tld-input" name="Tld" type="text" maxlength="63" autocomplete="off" spellcheck="false" placeholder="Ex.: .com, .com.br">
+              <label class="field-label" for="exclude-input">Caracteres a excluir <span class="optional">opcional</span></label>
+              <input class="field" id="exclude-input" name="Excluir" type="text" maxlength="36" autocomplete="off" spellcheck="false" placeholder="Ex.: g6ql">
+              <div class="field-row limit-row">
+                <label class="field-wrap"><span class="field-label">Limite de nomes</span><input class="field" name="Limite" type="number" min="0" max="2000000000" value="500" inputmode="numeric"></label>
+                <p class="field-hint limit-hint">0 percorre todas as combinações.</p>
+              </div>
+            </fieldset>
+            <button class="button button-primary button-wide glass-tinted" id="open-confirmation" type="button">
+              <svg aria-hidden="true"><use href="/assets/icons/icones.svg#play"></use></svg><span>Iniciar varredura</span>
+            </button>
+          </form>
+          <div class="source-note"><svg aria-hidden="true"><use href="/assets/icons/icones.svg#shield"></use></svg><p>Disponibilidade informada pelo registro não garante que um registrador aceite o nome. Confirme antes de comprar.</p></div>
+        </section>
+        <section class="screen" id="screen-resultados" data-screen="resultados" aria-labelledby="title-resultados" hidden>
+          <div class="screen-heading"><div><span class="eyebrow">ARQUIVO ATUAL</span><h2 id="title-resultados" tabindex="-1">Resultados</h2></div><button class="icon-button" type="button" data-refresh="results" aria-label="Atualizar resultados"><svg><use href="/assets/icons/icones.svg#refresh"></use></svg></button></div>
+          <p class="section-caption" id="results-count">Consultando arquivo…</p>
+          <div class="content-card result-card"><div id="results-state" class="inline-state" role="status" aria-live="polite">Carregando resultados…</div><ul class="domain-list" id="domain-list" aria-label="Domínios encontrados"></ul></div>
+          <button class="button button-secondary button-wide glass-clear" id="copy-results" type="button" disabled><svg aria-hidden="true"><use href="/assets/icons/icones.svg#copy"></use></svg><span>Copiar lista</span></button>
+          <p class="footnote">Esta é a lista gravada pela execução atual. Confirme a disponibilidade no registrador.</p>
+        </section>
+        <section class="screen" id="screen-log" data-screen="log" aria-labelledby="title-log" hidden>
+          <div class="screen-heading"><div><span class="eyebrow">ATIVIDADE REAL</span><h2 id="title-log" tabindex="-1">Log</h2></div><button class="icon-button" type="button" data-refresh="log" aria-label="Atualizar log"><svg><use href="/assets/icons/icones.svg#refresh"></use></svg></button></div>
+          <p class="section-caption" id="log-caption">Mensagens registradas pelo scanner</p>
+          <div class="content-card log-card"><div id="log-state" class="inline-state" role="status" aria-live="polite">Carregando log…</div><pre id="log-content" class="log-content" tabindex="0" aria-label="Linhas do log da execução atual"></pre></div>
+        </section>
+      </div>
+      <nav class="tab-bar glass-regular" aria-label="Navegação principal">
+        <button class="tab-button is-selected" type="button" data-navigate="busca" aria-current="page"><svg><use href="/assets/icons/icones.svg#search"></use></svg><span>Busca</span></button>
+        <button class="tab-button" type="button" data-navigate="resultados"><svg><use href="/assets/icons/icones.svg#list"></use></svg><span>Resultados</span></button>
+        <button class="tab-button" type="button" data-navigate="log"><svg><use href="/assets/icons/icones.svg#activity"></use></svg><span>Log</span></button>
+      </nav>
+      <div class="home-indicator" aria-hidden="true"><span></span></div>
+      <dialog class="confirm-sheet" id="confirm-sheet" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-content"><span class="sheet-icon"><svg aria-hidden="true"><use href="/assets/icons/icones.svg#warning"></use></svg></span><p class="eyebrow">CONFIRMAR AÇÃO</p><h2 id="confirm-title">Substituir os arquivos atuais?</h2><p id="confirm-description">O scanner apaga a lista e o log atuais antes de iniciar a varredura. Essa ação não pode ser desfeita.</p><div class="sheet-summary" id="scan-summary"></div><div class="global-state sheet-error" id="scan-submit-error" role="alert" aria-live="assertive" tabindex="-1" hidden></div><div class="sheet-actions"><button class="button button-secondary button-wide" id="cancel-scan" type="button">Voltar</button><button class="button button-primary button-wide" id="confirm-scan" type="button">Confirmar e iniciar</button></div></div>
+      </dialog>
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </section>
+  </main>
+  <svg class="icon-definitions" aria-hidden="true" focusable="false"><use href="/assets/icons/icones.svg#onda"></use></svg>
+</body>
+</html>

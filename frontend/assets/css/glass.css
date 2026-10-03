@@ -1,0 +1,86 @@
+/* Arquivo: frontend/assets/css/glass.css */
+.glass-regular,
+.glass-clear,
+.glass-tinted {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, .88);
+}
+
+.glass-regular {
+  background: rgba(255, 255, 255, var(--glass-opacity));
+  -webkit-backdrop-filter: blur(var(--glass-regular-blur)) saturate(185%);
+  backdrop-filter: blur(var(--glass-regular-blur)) saturate(185%);
+}
+
+.glass-clear {
+  background: rgba(255, 255, 255, var(--glass-clear-opacity));
+  -webkit-backdrop-filter: blur(var(--glass-clear-blur)) saturate(190%);
+  backdrop-filter: blur(var(--glass-clear-blur)) saturate(190%);
+}
+
+.glass-tinted {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .7);
+  background: linear-gradient(145deg, rgba(0, 101, 211, .94), rgba(0, 79, 184, .9));
+  box-shadow: 0 12px 24px rgba(0, 81, 190, .25), 0 3px 7px rgba(0, 67, 154, .17), inset 0 1px 0 rgba(255, 255, 255, .62);
+  -webkit-backdrop-filter: blur(var(--glass-tinted-blur)) saturate(185%);
+  backdrop-filter: blur(var(--glass-tinted-blur)) saturate(185%);
+}
+
+.glass-regular::before,
+.glass-clear::before,
+.glass-tinted::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(155deg, var(--glass-highlight), transparent 42%, rgba(255, 255, 255, .12));
+  content: "";
+  pointer-events: none;
+}
+
+.glass-regular::after,
+.glass-clear::after,
+.glass-tinted::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(180px circle at var(--pointer-x, 50%) var(--pointer-y, 0%), rgba(255, 255, 255, .24), transparent 72%);
+  content: "";
+  opacity: 0;
+  transition: opacity var(--duration-interaction) var(--spring-standard);
+  pointer-events: none;
+}
+
+.glass-regular:hover::after,
+.glass-clear:hover::after,
+.glass-tinted:hover::after,
+.glass-regular:focus-within::after,
+.glass-clear:focus-within::after,
+.glass-tinted:focus-within::after { opacity: 1; }
+
+.glass-interactive { transition: transform var(--duration-interaction) var(--spring-standard), box-shadow var(--duration-interaction) var(--spring-standard), filter var(--duration-interaction) var(--spring-standard); }
+.glass-interactive:active { transform: scale(.975); filter: brightness(1.035); }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-regular { background: #fbfbfe; }
+  .glass-clear { background: #f6f6fb; }
+  .glass-tinted { background: #0057b8; }
+  .confirm-sheet { background: #fff; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-regular, .glass-clear, .glass-tinted { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .glass-regular { background: #fff; }
+  .glass-clear { background: #f5f5fa; }
+  .glass-tinted { background: #0057b8; }
+  .glass-regular::before, .glass-clear::before, .glass-tinted::before, .glass-regular::after, .glass-clear::after, .glass-tinted::after { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-interactive, .glass-regular::after, .glass-clear::after, .glass-tinted::after { transition-duration: 1ms; animation-duration: 1ms; }
+  .glass-interactive:active { transform: none; }
+}

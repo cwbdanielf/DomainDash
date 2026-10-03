@@ -1,0 +1,14 @@
+# Scanner outputs and temporary state
+/dominios-disponiveis.txt
+/cacador-dominios-log.txt
+/cacador-dominios-log.old.txt
+/cacador-dominios.lock
+/dominios-si-disponiveis.txt
+/cacador-si-log.txt
+/cacador-si-log.old.txt
+/cacador-si-estado.json
+/cacador-si-estado.json.tmp
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db

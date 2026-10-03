@@ -1,0 +1,73 @@
+/* Arquivo: frontend/assets/css/tokens.css */
+@font-face {
+  font-family: "Inter Local";
+  src: url("../fonts/inter_variavel.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter Local", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --accent: #007aff;
+  --accent-action: #0057b8;
+  --success: #237a3b;
+  --warning: #a85e00;
+  --danger: #d70015;
+  --purple: #5856d6;
+  --ink: #09090b;
+  --ink-secondary: rgba(60, 60, 67, .78);
+  --ink-tertiary: rgba(60, 60, 67, .74);
+  --separator: rgba(60, 60, 67, .2);
+  --surface: #fff;
+  --surface-grouped: #f2f2f7;
+  --surface-raised: #fff;
+  --surface-soft: #f7f7fa;
+  --glass-opacity: .7;
+  --glass-clear-opacity: .58;
+  --glass-regular-blur: 28px;
+  --glass-clear-blur: 32px;
+  --glass-tinted-blur: 18px;
+  --glass-edge: rgba(255, 255, 255, .78);
+  --glass-highlight: rgba(255, 255, 255, .68);
+  --glass-shadow: 0 14px 34px rgba(35, 43, 75, .16), 0 3px 9px rgba(32, 39, 66, .09);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --radius-small: 14px;
+  --radius-field: 17px;
+  --radius-card: 24px;
+  --radius-sheet: 34px;
+  --radius-device: 54px;
+  --shadow-device: 0 48px 140px rgba(31, 37, 75, .24), 0 12px 32px rgba(16, 24, 48, .16);
+  --shadow-card: 0 1px 2px rgba(18, 22, 36, .04), 0 8px 24px rgba(18, 22, 36, .045);
+  --shadow-float: 0 16px 44px rgba(32, 38, 67, .17), 0 4px 12px rgba(20, 26, 49, .1);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, .82);
+  --spring-standard: linear(0, .005 1%, .019 2%, .042 3%, .075 4%, .117 5%, .169 6%, .231 7%, .305 8%, .39 9%, .49 10%, .604 11%, .73 12%, .86 13%, .96 14%, 1.04 15%, 1.09 16%, 1.11 17%, 1.1 18%, 1.07 19%, 1.04 20%, 1.02 21%, 1 24%, 1 100%);
+  --duration-interaction: 360ms;
+  --duration-slow: 480ms;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { min-width: 320px; min-height: 100%; background: var(--surface-grouped); }
+body { min-width: 320px; min-height: 100vh; margin: 0; color: var(--ink); }
+button, input, select { font: inherit; }
+button { color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+::selection { background: rgba(0, 122, 255, .2); }
+
+@media (prefers-contrast: more) {
+  :root { --separator: rgba(34, 34, 40, .48); --ink-secondary: #424249; --glass-opacity: .94; --glass-clear-opacity: .94; }
+}
